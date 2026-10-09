@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tasks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f2f4f9;
+      --surface: #ffffff;
+      --ink: #1a2233;
+      --muted: #66718a;
+      --line: #dde2ec;
+      --accent: #2f54eb;
+      --accent-ink: #ffffff;
+      --live: #14946a;
+      --live-bg: #e3f5ee;
+      --down: #b4561a;
+      --down-bg: #fbeadd;
+      --danger: #c0392b;
+      --radius: 14px;
+      --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11151f;
+        --surface: #1a2030;
+        --ink: #e8ecf5;
+        --muted: #93a0ba;
+        --line: #2a3247;
+        --accent: #6f8bff;
+        --accent-ink: #0e1220;
+        --live: #4cd3a0;
+        --live-bg: #16322a;
+        --down: #f0a56b;
+        --down-bg: #3a2616;
+        --danger: #ff8b7e;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    main {
+      max-width: 34rem;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    /* ---- Deploy status: shows the result of the pipeline ---- */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      padding: .35rem .8rem .35rem .65rem;
+      border-radius: 999px;
+      font-size: .875rem;
+      font-weight: 500;
+      background: var(--live-bg);
+      color: var(--live);
+    }
+    .status[data-state="down"] { background: var(--down-bg); color: var(--down); }
+    .status .dot {
+      width: .55rem; height: .55rem; border-radius: 50%;
+      background: currentColor;
+    }
+    .status[data-state="live"] .dot { animation: pulse 2.4s ease-out infinite; }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); }
+      70%  { box-shadow: 0 0 0 .5rem transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+    .status .build { color: var(--muted); font-weight: 400; }
+
+    header { margin: 1.5rem 0 1.5rem; }
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 2.75rem;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .summary { margin: .4rem 0 0; color: var(--muted); }
+
+    /* ---- Add form ---- */
+    form {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1.25rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      font: inherit;
+      color: inherit;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: .8rem 1rem;
+    }
+    input[type="text"]::placeholder { color: var(--muted); }
+    .btn-add {
+      font: inherit;
+      font-weight: 600;
+      background: var(--accent);
+      color: var(--accent-ink);
+      border: 0;
+      border-radius: var(--radius);
+      padding: 0 1.3rem;
+      cursor: pointer;
+    }
+    .btn-add:hover { filter: brightness(1.08); }
+
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    /* ---- Filters ---- */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: .75rem;
+      gap: 1rem;
+    }
+    .filters { display: flex; gap: .25rem; }
+    .filters button, .clear {
+      font: inherit;
+      font-size: .9rem;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      padding: .3rem .7rem;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .filters button:hover, .clear:hover { color: var(--ink); }
+    .filters button[aria-pressed="true"] {
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+    .clear[hidden] { display: none; }
+
+    /* ---- Task list ---- */
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+    li {
+      display: flex;
+      align-items: center;
+      gap: .85rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: .8rem 1rem;
+    }
+    li label { flex: 1; display: flex; align-items: center; gap: .85rem; cursor: pointer; min-width: 0; }
+    li .title { overflow-wrap: anywhere; }
+    li.done .title { color: var(--muted); text-decoration: line-through; }
+
+    input[type="checkbox"] {
+      appearance: none;
+      flex: none;
+      width: 1.4rem; height: 1.4rem;
+      margin: 0;
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+    }
+    input[type="checkbox"]::after {
+      content: "";
+      width: .7rem; height: .4rem;
+      border-left: 2.5px solid var(--accent-ink);
+      border-bottom: 2.5px solid var(--accent-ink);
+      transform: rotate(-45deg) translate(1px, -1px) scale(0);
+      transition: transform .12s ease-out;
+    }
+    input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+    input[type="checkbox"]:checked::after { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
+
+    .delete {
+      flex: none;
+      width: 2rem; height: 2rem;
+      display: grid; place-content: center;
+      background: none; border: 0; border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .delete:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+    .delete svg { width: 1.1rem; height: 1.1rem; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 2rem 1rem;
+    }
+    .error { color: var(--danger); margin: 0 0 1rem; min-height: 1.5rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .status .dot { animation: none !important; }
+      input[type="checkbox"]::after { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div id="status" class="status" data-state="live" role="status">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="status-text">Checking…</span>
+      <span id="build" class="build"></span>
+    </div>
+
+    <header>
+      <h1>Tasks</h1>
+      <p id="summary" class="summary"></p>
+    </header>
+
+    <form id="form">
+      <input id="title" type="text" placeholder="What needs doing?" aria-label="New task" autocomplete="off" required />
+      <button class="btn-add">Add task</button>
+    </form>
+    <p id="error" class="error" role="alert"></p>
+
+    <div class="toolbar">
+      <div class="filters" id="filters">
+        <button data-filter="all" aria-pressed="true">All</button>
+        <button data-filter="active" aria-pressed="false">To do</button>
+        <button data-filter="done" aria-pressed="false">Done</button>
+      </div>
+      <button id="clear" class="clear" hidden>Clear done</button>
+    </div>
+
+    <ul id="list"></ul>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const list = $('list');
+    let todos = [];
+    let filter = 'all';
+
+    async function api(path, options) {
+      const res = await fetch(path, options);
+      if (!res.ok) throw new Error('Request failed (' + res.status + ')');
+      return res.status === 204 ? null : res.json();
+    }
+
+    function showError(message) { $('error').textContent = message || ''; }
+
+    const trashIcon =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+
+    function render() {
+      const left = todos.filter((t) => !t.done).length;
+      const doneCount = todos.length - left;
+      $('summary').textContent = todos.length === 0
+        ? 'Nothing here yet.'
+        : left === 0 ? 'All done. Nice work.' : left + (left === 1 ? ' task left' : ' tasks left');
+      $('clear').hidden = doneCount === 0;
+
+      const visible = todos.filter((t) =>
+        filter === 'all' ? true : filter === 'done' ? t.done : !t.done);
+
+      list.innerHTML = '';
+      if (visible.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'empty';
+        empty.style.display = 'block';
+        empty.textContent = todos.length === 0
+          ? 'Add your first task above to get started.'
+          : 'No tasks in this view.';
+        list.append(empty);
+        return;
+      }
+
+      visible.forEach((t) => {
+        const li = document.createElement('li');
+        if (t.done) li.className = 'done';
+
+        const label = document.createElement('label');
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = t.done;
+        box.onchange = () => run(() => api('/api/todos/' + t.id, { method: 'PATCH' }));
+        const title = document.createElement('span');
+        title.className = 'title';
+        title.textContent = t.title;
+        label.append(box, title);
+
+        const del = document.createElement('button');
+        del.className = 'delete';
+        del.setAttribute('aria-label', 'Delete task: ' + t.title);
+        del.innerHTML = trashIcon;
+        del.onclick = () => run(() => api('/api/todos/' + t.id, { method: 'DELETE' }));
+
+        li.append(label, del);
+        list.append(li);
+      });
+    }
+
+    async function load() {
+      todos = await api('/api/todos');
+      render();
+    }
+
+    async function run(action) {
+      try { showError(''); await action(); await load(); }
+      catch (e) { showError('Something went wrong: ' + e.message + '. Try again.'); }
+    }
+
+    $('form').onsubmit = (e) => {
+      e.preventDefault();
+      const input = $('title');
+      const title = input.value.trim();
+      if (!title) return;
+      run(() => api('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      })).then(() => { input.value = ''; input.focus(); });
+    };
+
+    $('filters').onclick = (e) => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      filter = btn.dataset.filter;
+      document.querySelectorAll('#filters button').forEach((b) =>
+        b.setAttribute('aria-pressed', String(b === btn)));
+      render();
+    };
+
+    $('clear').onclick = () => run(() =>
+      Promise.all(todos.filter((t) => t.done).map((t) =>
+        api('/api/todos/' + t.id, { method: 'DELETE' }))));
+
+    async function checkStatus() {
+      const el = $('status');
+      try {
+        const [health, version] = await Promise.all([fetch('/health'), fetch('/version')]);
+        if (!health.ok) throw new Error('unhealthy');
+        const { version: sha } = await version.json();
+        el.dataset.state = 'live';
+        $('status-text').textContent = 'Live';
+        $('build').textContent = sha === 'dev' ? 'local build' : 'build ' + sha.slice(0, 7);
+      } catch {
+        el.dataset.state = 'down';
+        $('status-text').textContent = 'Server unreachable';
+        $('build').textContent = '';
+      }
+    }
+
+    load().catch(() => showError('Could not load tasks. Check that the server is running.'));
+    checkStatus();
+    setInterval(checkStatus, 30000);
+  </script>
+</body>
+</html>

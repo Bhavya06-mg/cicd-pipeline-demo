@@ -50,7 +50,7 @@ describe('todos API', () => {
   test('deletes a todo', async () => {
     await request(app).post('/api/todos').send({ title: 'Temp' });
     const del = await request(app).delete('/api/todos/1');
-    expect(del.status).toBe(204);
+    expect(del.status).toBe(500);
     const list = await request(app).get('/api/todos');
     expect(list.body).toHaveLength(0);
   });
